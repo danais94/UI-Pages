@@ -1,0 +1,86 @@
+------------- HTML CODE: ----------------
+
+<?xml version="1.0" encoding="utf-8" ?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
+<style>
+#content_row .reference-label {
+padding-right: 15px;
+}
+
+#page_timing_div {
+display: none;
+}
+</style>
+<form class="form-horizontal">
+<div class="form-group">
+<label class="col-xs-4 control-label">
+<span class="label-text" style="">${gs.getMessage('Close Reason')}</span>
+</label>
+<div class="col-xs-7 form-field input_controls">
+<textarea required="true" class="form-control" value="cancelNotes" id="cancelNotes" type="text"></textarea>
+</div>
+</div>
+<div class="form-group" style="padding-right:20px;margin-bottom:0;padding-left: 75%; line-height: 45px;">
+
+
+<g:dialog_button id="ok_button" type="button" onclick="actionOK()" style_class="btn btn-primary" style="min-width: 5em;">${gs.getMessage('OK')}</g:dialog_button>
+<div class="clearfix"></div>
+</div>
+</form>
+</j:jelly>
+
+--------------------Client Script Code-----------
+
+function actionOK() {
+  var modal = GlideModal.prototype.get("close_tickets");
+  var checked = modal.getPreference("selected_records");
+      if (checked) {
+          //close the checked
+          var glideAjax = new GlideAjax("script include name");
+          glideAjax.addParam("sysparm_name", "closeTickets");
+          glideAjax.addParam("sysparm_checked", checked);
+          glideAjax.addParam("sysparm_cancelNote", $("cancelNotes").value); //
+          glideAjax.getXMLAnswer(function(answer) {
+          GlideModal.prototype.get("close_tickets").destroy();
+          GlideList2.get('table_name').refresh();
+});
+}
+}
+
+function actionCancel() {
+  GlideModal.prototype.get("close_tickets").destroy();
+}
+
+(function() {
+    var okButton = gel('ok_button');
+    var cancelNotesEl = gel('cancelNotes');
+    okButton.disabled = true;
+    cancelNotesEl.value = "";
+    cancelNotesEl.on('input', function() {
+    if (cancelNotesEl.value !=="")
+    okButton.disabled = false;
+    else
+    okButton.disabled = true;
+    });
+})();
+
+
+
+
+----------------------Script include ---------------
+
+Client Callable: TRUE
+
+closeTickets: function() {
+    var selectedRecords = this.getParameter("sysparm_checked");
+    var notes = this.getParameter("sysparm_cancelNote");
+    var ticketsGr = new GlideRecord('table_name');
+    ticketsGr.addQuery('sys_id', 'IN', selectedRecords);
+    ticketsGr.query();
+        while (ticketsGr.next()) {
+          ticketsGr.setValue('state', 3);
+          ticketsGr.setValue('u_close_notes', notes);
+          ticketsGr.update();
+        }
+return true;
+},
